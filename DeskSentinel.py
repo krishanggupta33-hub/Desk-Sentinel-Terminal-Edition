@@ -116,3 +116,65 @@ class Game:
         self.font_ui_big = pygame.font.SysFont(FONT_NAME, 36, bold=True)
         self.font_title = pygame.font.SysFont(FONT_NAME, 54, bold=True)
  
+        self.sounds_ok = True
+        try:
+            pygame.mixer.init()
+            self.snd_type = self._make_tone(880, 0.03)
+            self.snd_clear = self._make_tone(1400, 0.09)
+            self.snd_miss = self._make_tone(140, 0.25)
+        except Exception:
+            self.sounds_ok = False
+ 
+        self.reset()
+ 
+    def _make_tone(self, freq, duration):
+        import array
+ 
+        sample_rate = 44100
+        n_samples = int(sample_rate * duration)
+        buf = array.array("h")
+        amp = 14000
+        for i in range(n_samples):
+            t = i / sample_rate
+            fade = 1.0 - (i / n_samples)
+            val = int(amp * fade * pygame.math.Vector2(1, 0).rotate_rad(2 * 3.14159 * freq * t).x)
+            buf.append(val)
+            buf.append(val)
+        return pygame.mixer.Sound(buffer=buf.tobytes())
+ 
+    def play(self, snd):
+        if self.sounds_ok:
+            try:
+                snd.play()
+            except Exception:
+                pass
+ 
+    def reset(self):
+        self.blocks = []
+        self.particles = []
+        self.typed = ""
+        self.target_block = None
+        self.health = MAX_HEALTH
+        self.score = 0
+        self.level = 1
+        self.spawn_timer = 0.0
+        self.spawn_interval = SPAWN_INTERVAL_START
+        self.game_over = False
+        self.time_alive = 0.0
+ 
+    def current_fall_speed(self):
+        return BASE_FALL_SPEED + SPEED_PER_LEVEL * (self.level - 1)
+ 
+    def spawn_block(self):
+        x = random.randint(20, WIDTH - BLOCK_W - 20)
+        code = random_code()
+        speed = self.current_fall_speed() * random.uniform(0.9, 1.15)
+        self.blocks.append(Block(x, code, speed))
+ 
+    def handle_key(self, event):
+        if self.game_over:
+            if event.key == pygame.K_r:
+                self.reset()
+            return
+ 
+        if event.key == pygame.K_BACKSPACE:
