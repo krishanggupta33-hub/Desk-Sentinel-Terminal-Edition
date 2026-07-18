@@ -186,4 +186,37 @@ class Game:
             self._try_submit()
             return
 
-        if event
+        if event.unicode and event.unicode.isalnum():
+            self.typed += event.unicode.upper()
+            if len(self.typed) > CODE_LEN_MAX:
+                self.typed = self.typed[:CODE_LEN_MAX]
+            self._update_target()
+            self.play(self.snd_type)
+
+    def _update_target(self):
+        self.target_block = None
+        for b in self.blocks:
+            if self.typed and b.code.startswith(self.typed):
+                b.typed_len = len(self.typed)
+                if self.target_block is None:
+                    self.target_block = b
+            else:
+                b.typed_len = 0
+
+    def _try_submit(self):
+        for b in self.blocks:
+            if b.code == self.typed:
+                self._destroy_block(b)
+                self.typed = ""
+                self.target_block = None
+                return
+        self.typed = ""
+        for b in self.blocks:
+            b.typed_len = 0
+
+    def _destroy_block(self, block):
+        self.blocks.remove(block)
+        self.score += 1
+        cx, cy = block.x + BLOCK_W / 2, block.y + BLOCK_H / 2
+        for _ in range(22):
+            self
