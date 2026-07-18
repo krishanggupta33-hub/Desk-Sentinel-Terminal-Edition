@@ -219,4 +219,36 @@ class Game:
         self.score += 1
         cx, cy = block.x + BLOCK_W / 2, block.y + BLOCK_H / 2
         for _ in range(22):
-            self
+            self.particles.append(Particle(cx, cy, NEON_GREEN))
+        self.play(self.snd_clear)
+
+        if self.score % LEVEL_UP_EVERY == 0:
+            self.level += 1
+            self.spawn_interval = max(SPAWN_INTERVAL_MIN, self.spawn_interval * 0.88)
+
+    def update(self, dt):
+        if self.game_over:
+            return
+
+        self.time_alive += dt
+        self.spawn_timer += dt
+        if self.spawn_timer >= self.spawn_interval:
+            self.spawn_timer = 0.0
+            self.spawn_block()
+
+        for b in list(self.blocks):
+            b.update(dt)
+            if b.bottom >= HEIGHT:
+                self.blocks.remove(b)
+                self.health -= DAMAGE_PER_MISS
+                self.play(self.snd_miss)
+                for _ in range(16):
+                    self.particles.append(
+                        Particle(b.x + BLOCK_W / 2, HEIGHT - 10, NEON_RED)
+                    )
+                if b is self.target_block:
+                    self.typed = ""
+                    self.target_block = None
+                if self.health <= 0:
+                    self.health = 0
+                |
